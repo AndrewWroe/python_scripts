@@ -298,6 +298,27 @@ def configure_canvas_width(event):
 
 canvas.bind('<Configure>', configure_canvas_width)
 
+# === Add Mouse Wheel Scrolling for Windows ===
+def on_mouse_wheel(event):
+    # Scroll the canvas based on mouse wheel movement
+    # delta is positive for scroll up, negative for scroll down
+    canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+# Bind mouse wheel to the canvas (Windows uses <MouseWheel>)
+canvas.bind("<MouseWheel>", on_mouse_wheel)
+
+# Bind mouse wheel to the scrollable frame and its children
+def bind_mouse_wheel(widget):
+    widget.bind("<MouseWheel>", on_mouse_wheel)
+    for child in widget.winfo_children():
+        bind_mouse_wheel(child)
+
+# Apply bindings to the scrollable frame and its children
+bind_mouse_wheel(scrollable_frame)
+
+# Ensure the canvas can receive focus to capture mouse wheel events
+canvas.bind("<Button-1>", lambda event: canvas.focus_set())
+
 canvas.pack(side="left", fill="both", expand=True)
 scrollbar.pack(side="right", fill="y")
 
