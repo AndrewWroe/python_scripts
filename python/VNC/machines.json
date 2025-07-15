@@ -1,0 +1,222 @@
+{
+    "ACACIA": {
+        "ip": "ACACIA",
+        "secure": false
+    },
+    "AMUSYOKA": {
+        "ip": "AMUSYOKA",
+        "secure": false
+    },
+    "AMWANIKI": {
+        "ip": "AMWANIKI",
+        "secure": false
+    },
+    "AWASON-NEW": {
+        "ip": "AWASON-NEW",
+        "secure": false
+    },
+    "AWROE": {
+        "ip": "AWROE",
+        "secure": false
+    },
+    "BAOBAB": {
+        "ip": "BAOBAB",
+        "secure": false
+    },
+    "BOARDROOM": {
+        "ip": "BOARDROOM",
+        "secure": false
+    },
+    "CMAMBILI": {
+        "ip": "CMAMBILI",
+        "secure": false
+    },
+    "CMBURU": {
+        "ip": "CMBURU",
+        "secure": false
+    },
+    "CMUSAU": {
+        "ip": "CMUSAU",
+        "secure": false
+    },
+    "CRDRY": {
+        "ip": "CRDRY",
+        "secure": false
+    },
+    "DKARIUKI": {
+        "ip": "DKARIUKI",
+        "secure": false
+    },
+    "EMAINA": {
+        "ip": "EMAINA",
+        "secure": false
+    },
+    "EMUA": {
+        "ip": "EMUA",
+        "secure": false
+    },
+    "ENGIGE": {
+        "ip": "ENGIGE",
+        "secure": false
+    },
+    "ENYAMBURA": {
+        "ip": "ENYAMBURA",
+        "secure": false
+    },
+    "FJAOKO": {
+        "ip": "FJAOKO",
+        "secure": false
+    },
+    "FOKEYO-NEW": {
+        "ip": "FOKEYO-NEW",
+        "secure": false
+    },
+    "FODHIAMBO": {
+        "ip": "FODHIAMBO",
+        "secure": false
+    },
+    "GKENYA": {
+        "ip": "GKENYA",
+        "secure": false
+    },
+    "HSHAH": {
+        "ip": "HSHAH",
+        "secure": false
+    },
+    "HYAWE": {
+        "ip": "HYAWE",
+        "secure": false
+    },
+    "JDRY": {
+        "ip": "JDRY",
+        "secure": false
+    },
+    "JHOLT": {
+        "ip": "JHOLT",
+        "secure": false
+    },
+    "JMELITA": {
+        "ip": "JMELITA",
+        "secure": false
+    },
+    "JNAMALE": {
+        "ip": "JNAMALE",
+        "secure": false
+    },
+    "JNAMALE-NEW": {
+        "ip": "JNAMALE-NEW",
+        "secure": false
+    },
+    "JNYALAL": {
+        "ip": "JNYALAL",
+        "secure": false
+    },
+    "JNYAMACHE": {
+        "ip": "JNYAMACHE",
+        "secure": false
+    },
+    "JTHUO": {
+        "ip": "JTHUO",
+        "secure": true
+    },
+    "KBHUNDIA": {
+        "ip": "KBHUNDIA",
+        "secure": false
+    },
+    "KOUKO": {
+        "ip": "KOUKO",
+        "secure": false
+    },
+    "LOKURU": {
+        "ip": "LOKURU",
+        "secure": false
+    },
+    "MOUMA": {
+        "ip": "MOUMA",
+        "secure": false
+    },
+    "ONJOROGE": {
+        "ip": "ONJOROGE",
+        "secure": false
+    },
+    "PNYAKUNDI": {
+        "ip": "PNYAKUNDI",
+        "secure": false
+    },
+    "QSUMAR": {
+        "ip": "QSUMAR",
+        "secure": false
+    },
+    "SABDALLAH-NEW": {
+        "ip": "SABDALLAH-NEW",
+        "secure": false
+    },
+    "SAGAGLIATE": {
+        "ip": "SAGAGLIATE",
+        "secure": false
+    },
+    "SAGAGLIATE-NEW": {
+        "ip": "SAGAGLIATE-NEW",
+        "secure": false
+    },
+    "SBACHIA": {
+        "ip": "SBACHIA",
+        "secure": false
+    },
+    "SDRY": {
+        "ip": "SDRY",
+        "secure": false
+    },
+    "SHINOBI": {
+        "ip": "SHINOBI",
+        "secure": false
+    },
+    "SKARIUKI": {
+        "ip": "SKARIUKI",
+        "secure": false
+    },
+    "SLAMOTHE": {
+        "ip": "SLAMOTHE",
+        "secure": false
+    },
+    "SMDRY": {
+        "ip": "SMDRY",
+        "secure": false
+    },
+    "SMUTINDA": {
+        "ip": "SMUTINDA",
+        "secure": false
+    },
+    "SSHAH": {
+        "ip": "SSHAH",
+        "secure": false
+    },
+    "SWAMBUGU": {
+        "ip": "SWAMBUGU",
+        "secure": false
+    },
+    "TEMPLETON": {
+        "ip": "TEMPLETON",
+        "secure": false
+    },
+    "THINKTANK": {
+        "ip": "THINKTANK",
+        "secure": false
+    },
+    "VOWUOR": {
+        "ip": "VOWUOR",
+        "secure": false
+    },
+    "VSHAH": {
+        "ip": "VSHAH",
+        "secure": false
+    },
+    "VMUGAMBI": {
+        "ip": "VMUGAMBI",
+        "secure": false
+    },
+    "YKOTEDIA-NEW": {
+        "ip": "YKOTEDIA-NEW",
+        "secure": false
+    }
+}
