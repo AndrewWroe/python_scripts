@@ -184,16 +184,23 @@ def edit_machine():
     status_var.set(f"Edited machine: {new_name}")
 
 # === Refresh machine list ===
-def refresh_machine_list():
+def refresh_machine_list(search_query=""):
     for widget in frame_buttons.winfo_children():
         widget.destroy()
     machine_var.set("")
     
-    # Find the longest text to determine consistent width
+    # Filter machines based on search query
+    filtered_machines = {
+        name: info for name, info in machines.items()
+        if search_query.lower() in name.lower() or 
+        (isinstance(info, str) and search_query.lower() in info.lower()) or
+        (isinstance(info, dict) and search_query.lower() in info.get("ip", "").lower())
+    }
+    
+    # === Find the longest text to determine consistent width ===
     max_width = 0
-    if machines:
-        for name, machine_info in machines.items():
-            # Handle old format (string) vs new format (dict)
+    if filtered_machines:
+        for name, machine_info in filtered_machines.items():
             if isinstance(machine_info, str):
                 ip = machine_info
                 secure = False
@@ -205,8 +212,7 @@ def refresh_machine_list():
             text_length = len(f"{security_icon} {name} ({ip})")
             max_width = max(max_width, text_length)
     
-    for name, machine_info in machines.items():
-        # Handle old format (string) vs new format (dict)
+    for name, machine_info in filtered_machines.items():
         if isinstance(machine_info, str):
             ip = machine_info
             secure = False
@@ -216,7 +222,7 @@ def refresh_machine_list():
         
         security_icon = "🔒" if secure else "🔓"
         
-        # Create radio button with consistent width
+        # === Create radio button with consistent width ===
         radio_btn = ttk.Radiobutton(
             frame_buttons,
             text=f"{security_icon} {name} ({ip})",
@@ -227,7 +233,7 @@ def refresh_machine_list():
         )
         radio_btn.pack(pady=5, anchor="center")
     
-    # Update the canvas scroll region
+    # === Update the canvas scroll region ===
     frame_buttons.update_idletasks()
     canvas.configure(scrollregion=canvas.bbox("all"))
 
@@ -276,6 +282,18 @@ frame_top = ttk.Frame(root)
 frame_top.pack(pady=10)
 ttk.Label(frame_top, text="VNC Dashboard", font=("Segoe UI", 16, "bold")).pack()
 
+# === Search Bar ===
+frame_search = ttk.Frame(root)
+frame_search.pack(pady=5, fill="x", padx=10)
+search_var = ttk.StringVar()
+# === Bind KeyRelease to update the machine list as the user types ===
+search_var.trace_add("write", lambda *args: refresh_machine_list(search_var.get()))
+ttk.Entry(frame_search, textvariable=search_var, bootstyle="info").pack(fill="x")
+ttk.Label(frame_search, text="Search machines by name or IP").pack()
+# === Added: Clear button for search bar ===
+ttk.Button(frame_search, text="Clear", command=lambda: search_var.set(""), bootstyle="secondary").pack(side="right", padx=5)
+
+
 # === Scrollable Machine List ===
 frame_buttons_container = ttk.Frame(root)
 frame_buttons_container.pack(pady=10, fill="both", expand=True)
@@ -292,7 +310,7 @@ scrollable_frame.bind(
 canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
 canvas.configure(yscrollcommand=scrollbar.set)
 
-# Configure the canvas window to expand with the canvas width
+# === Configure the canvas window to expand with the canvas width ===
 def configure_canvas_width(event):
     canvas.itemconfig(canvas.find_all()[0], width=event.width)
 
@@ -304,7 +322,7 @@ def on_mouse_wheel(event):
     # delta is positive for scroll up, negative for scroll down
     canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
-# Bind mouse wheel to the canvas (Windows uses <MouseWheel>)
+# === Bind mouse wheel to the canvas (Windows uses <MouseWheel>) ===
 canvas.bind("<MouseWheel>", on_mouse_wheel)
 
 # Bind mouse wheel to the scrollable frame and its children
@@ -313,10 +331,10 @@ def bind_mouse_wheel(widget):
     for child in widget.winfo_children():
         bind_mouse_wheel(child)
 
-# Apply bindings to the scrollable frame and its children
+# === Apply bindings to the scrollable frame and its children ===
 bind_mouse_wheel(scrollable_frame)
 
-# Ensure the canvas can receive focus to capture mouse wheel events
+# === Ensure the canvas can receive focus to capture mouse wheel events ===
 canvas.bind("<Button-1>", lambda event: canvas.focus_set())
 
 canvas.pack(side="left", fill="both", expand=True)
@@ -328,7 +346,6 @@ frame_buttons = scrollable_frame
 frame_actions = ttk.Frame(root)
 frame_actions.pack(pady=10, fill="x", padx=10)
 
-# Configure columns to expand equally
 frame_actions.grid_columnconfigure(0, weight=1)
 frame_actions.grid_columnconfigure(1, weight=1)
 frame_actions.grid_columnconfigure(2, weight=1)
@@ -343,6 +360,17 @@ ttk.Button(frame_actions, text="Remove Machine", command=remove_machine, bootsty
 status_var = ttk.StringVar()
 ttk.Label(root, textvariable=status_var, anchor="w", relief="sunken", bootstyle="secondary").pack(fill="x", side="bottom")
 status_var.set("Ready")
+
+# === Configure columns to expand equally ===
+frame_actions.grid_columnconfigure(0, weight=1)
+frame_actions.grid_columnconfigure(1, weight=1)
+frame_actions.grid_columnconfigure(2, weight=1)
+frame_actions.grid_columnconfigure(3, weight=1)
+
+ttk.Button(frame_actions, text="Launch VNC", command=launch_selected_machine, bootstyle="success").grid(row=0, column=0, sticky="ew", padx=2)
+ttk.Button(frame_actions, text="Add Machine", command=add_machine, bootstyle="primary").grid(row=0, column=1, sticky="ew", padx=2)
+ttk.Button(frame_actions, text="Edit Machine", command=edit_machine, bootstyle="warning").grid(row=0, column=2, sticky="ew", padx=2)
+ttk.Button(frame_actions, text="Remove Machine", command=remove_machine, bootstyle="danger").grid(row=0, column=3, sticky="ew", padx=2)
 
 refresh_machine_list()
 root.mainloop()
