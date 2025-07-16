@@ -351,11 +351,6 @@ frame_actions.grid_columnconfigure(1, weight=1)
 frame_actions.grid_columnconfigure(2, weight=1)
 frame_actions.grid_columnconfigure(3, weight=1)
 
-ttk.Button(frame_actions, text="Launch VNC", command=launch_selected_machine, bootstyle="success").grid(row=0, column=0, sticky="ew", padx=2)
-ttk.Button(frame_actions, text="Add Machine", command=add_machine, bootstyle="primary").grid(row=0, column=1, sticky="ew", padx=2)
-ttk.Button(frame_actions, text="Edit Machine", command=edit_machine, bootstyle="warning").grid(row=0, column=2, sticky="ew", padx=2)
-ttk.Button(frame_actions, text="Remove Machine", command=remove_machine, bootstyle="danger").grid(row=0, column=3, sticky="ew", padx=2)
-
 # === Status Bar ===
 status_var = ttk.StringVar()
 ttk.Label(root, textvariable=status_var, anchor="w", relief="sunken", bootstyle="secondary").pack(fill="x", side="bottom")
@@ -367,10 +362,10 @@ frame_actions.grid_columnconfigure(1, weight=1)
 frame_actions.grid_columnconfigure(2, weight=1)
 frame_actions.grid_columnconfigure(3, weight=1)
 
-ttk.Button(frame_actions, text="Launch VNC", command=launch_selected_machine, bootstyle="success").grid(row=0, column=0, sticky="ew", padx=2)
-ttk.Button(frame_actions, text="Add Machine", command=add_machine, bootstyle="primary").grid(row=0, column=1, sticky="ew", padx=2)
-ttk.Button(frame_actions, text="Edit Machine", command=edit_machine, bootstyle="warning").grid(row=0, column=2, sticky="ew", padx=2)
-ttk.Button(frame_actions, text="Remove Machine", command=remove_machine, bootstyle="danger").grid(row=0, column=3, sticky="ew", padx=2)
+ttk.Button(frame_actions, text="Launch", command=launch_selected_machine, bootstyle="success").grid(row=0, column=0, sticky="ew", padx=2)
+ttk.Button(frame_actions, text=" Add  ", command=add_machine, bootstyle="primary").grid(row=0, column=1, sticky="ew", padx=2)
+ttk.Button(frame_actions, text=" Edit ", command=edit_machine, bootstyle="warning").grid(row=0, column=2, sticky="ew", padx=2)
+ttk.Button(frame_actions, text="Remove", command=remove_machine, bootstyle="danger").grid(row=0, column=3, sticky="ew", padx=2)
 
 refresh_machine_list()
 root.mainloop()
