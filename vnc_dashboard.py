@@ -73,10 +73,12 @@ def launch_vnc(ip_address, password=None, secure=False):
             return
 
     try:
-        args = [vnc_path, ip_address, "-viewonly", "-autoscaling"]
+        if secure:
+            args = [vnc_path, ip_address, "-viewonly", "-autoscaling", "-dsmplugin", "SecureVNCPlugin64.dsm"]
+        else:
+            args = [vnc_path, ip_address, "-viewonly", "-autoscaling"]
         if password:
             args += ["-password", password]
-        # Remove the problematic plugin argument - UltraVNC handles encryption automatically
         
         subprocess.Popen(args)
         security_status = "secured" if secure else "unsecured"
