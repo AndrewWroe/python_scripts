@@ -420,7 +420,10 @@ def refresh_machine_list(search_query=""):
             text_length = len(f"{security_icon} {name} ({ip})")
             max_width = max(max_width, text_length)
     
-    for name, machine_info in filtered_machines.items():
+    # Sort machines alphabetically by name
+    sorted_machines = sorted(filtered_machines.items(), key=lambda x: x[0].lower())
+    
+    for name, machine_info in sorted_machines:
         if isinstance(machine_info, str):
             ip = machine_info
             secure = False
@@ -440,6 +443,23 @@ def refresh_machine_list(search_query=""):
             width=max_width
         )
         radio_btn.pack(pady=5, anchor="center")
+        
+        # === Add double-click functionality to launch VNC ===
+        def make_launch_handler(machine_name):
+            def launch_machine(event=None):
+                machine_info = machines.get(machine_name, {})
+                if isinstance(machine_info, str):
+                    ip = machine_info
+                    secure = False
+                else:
+                    ip = machine_info.get("ip", "")
+                    secure = machine_info.get("secure", False)
+                
+                password = keyring.get_password(KEYRING_SERVICE, machine_name)
+                launch_vnc(ip, password, secure)
+            return launch_machine
+        
+        radio_btn.bind("<Double-Button-1>", make_launch_handler(name))
     
     # === Update the canvas scroll region ===
     frame_buttons.update_idletasks()
