@@ -1,4 +1,5 @@
 __pycache__/
+*.xml
 *.pyc
 *.pyo
 *.pyd
