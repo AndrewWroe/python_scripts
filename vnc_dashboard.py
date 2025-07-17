@@ -7,6 +7,8 @@ import subprocess
 import os
 import json
 import keyring
+import base64
+from datetime import datetime
 
 # === CONFIG ===
 VNC_VIEWER_PATH = r"C:\Program Files\uvnc bvba\UltraVNC\vncviewer.exe"
@@ -24,6 +26,210 @@ def load_config():
 def save_config(config):
     with open(CONFIG_FILE, "w") as f:
         json.dump(config, f, indent=4)
+
+# === Import/Export Functions ===
+def export_config():
+    """Export machines configuration and passwords to a JSON file"""
+    try:
+        # Gather all machine data
+        export_data = {
+            "metadata": {
+                "export_date": datetime.now().isoformat(),
+                "app_version": "1.0",
+                "description": "UltraVNC Dashboard Export"
+            },
+            "config": load_config(),
+            "machines": {},
+            "passwords": {}
+        }
+        
+        # Export machine configurations
+        for name, machine_info in machines.items():
+            export_data["machines"][name] = machine_info
+            
+            # Export passwords (encoded for basic security)
+            try:
+                password = keyring.get_password(KEYRING_SERVICE, name)
+                if password:
+                    # Base64 encode for basic obfuscation (not real security)
+                    encoded_password = base64.b64encode(password.encode()).decode()
+                    export_data["passwords"][name] = encoded_password
+            except Exception:
+                pass
+        
+        # Ask user for export location
+        file_path = filedialog.asksaveasfilename(
+            title="Export Configuration",
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+            initialfile=f"vnc_config_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        )
+        
+        if file_path:
+            with open(file_path, "w") as f:
+                json.dump(export_data, f, indent=4)
+            
+            machine_count = len(export_data["machines"])
+            password_count = len(export_data["passwords"])
+            
+            messagebox.showinfo(
+                "Export Successful", 
+                f"Configuration exported successfully!\n\n"
+                f"Machines: {machine_count}\n"
+                f"Passwords: {password_count}\n"
+                f"File: {file_path}"
+            )
+            status_var.set(f"Exported {machine_count} machines to {os.path.basename(file_path)}")
+        
+    except Exception as e:
+        messagebox.showerror("Export Error", f"Failed to export configuration:\n{str(e)}")
+        status_var.set("Export failed")
+
+def import_config():
+    """Import machines configuration and passwords from a JSON file"""
+    try:
+        # Ask user for import file
+        file_path = filedialog.askopenfilename(
+            title="Import Configuration",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
+        )
+        
+        if not file_path:
+            return
+        
+        with open(file_path, "r") as f:
+            import_data = json.load(f)
+        
+        # Validate import data structure
+        if not isinstance(import_data, dict) or "machines" not in import_data:
+            messagebox.showerror("Import Error", "Invalid configuration file format.")
+            return
+        
+        # Show import preview
+        machine_count = len(import_data.get("machines", {}))
+        password_count = len(import_data.get("passwords", {}))
+        export_date = import_data.get("metadata", {}).get("export_date", "Unknown")
+        
+        confirm_msg = (
+            f"Import Configuration Preview:\n\n"
+            f"Machines to import: {machine_count}\n"
+            f"Passwords to import: {password_count}\n"
+            f"Export date: {export_date}\n\n"
+            f"Choose import mode:"
+        )
+        
+        # Ask for import mode
+        import_mode = messagebox.askyesnocancel(
+            "Import Mode", 
+            confirm_msg + "\n\nYes = Merge (keep existing)\nNo = Replace (overwrite all)\nCancel = Abort"
+        )
+        
+        if import_mode is None:  # User cancelled
+            return
+        
+        imported_machines = 0
+        imported_passwords = 0
+        skipped_machines = 0
+        
+        # Import machines
+        for name, machine_info in import_data.get("machines", {}).items():
+            if import_mode and name in machines:  # Merge mode and machine exists
+                skip = not messagebox.askyesno(
+                    "Duplicate Machine", 
+                    f"Machine '{name}' already exists. Overwrite?"
+                )
+                if skip:
+                    skipped_machines += 1
+                    continue
+            
+            machines[name] = machine_info
+            imported_machines += 1
+        
+        # Import passwords
+        for name, encoded_password in import_data.get("passwords", {}).items():
+            if name in machines:  # Only import password if machine exists
+                try:
+                    # Decode password
+                    password = base64.b64decode(encoded_password.encode()).decode()
+                    keyring.set_password(KEYRING_SERVICE, name, password)
+                    imported_passwords += 1
+                except Exception:
+                    pass
+        
+        # Import config settings
+        if "config" in import_data:
+            current_config = load_config()
+            imported_config = import_data["config"]
+            
+            # Only update VNC path if it's different and valid
+            if imported_config.get("vnc_path") != current_config.get("vnc_path"):
+                if messagebox.askyesno(
+                    "Import VNC Path", 
+                    f"Import VNC viewer path?\n\nCurrent: {current_config.get('vnc_path', 'Not set')}\n"
+                    f"Import: {imported_config.get('vnc_path', 'Not set')}"
+                ):
+                    current_config.update(imported_config)
+                    save_config(current_config)
+        
+        # Save changes
+        save_machines()
+        refresh_machine_list()
+        
+        # Show results
+        result_msg = (
+            f"Import completed!\n\n"
+            f"Machines imported: {imported_machines}\n"
+            f"Passwords imported: {imported_passwords}\n"
+            f"Machines skipped: {skipped_machines}"
+        )
+        
+        messagebox.showinfo("Import Successful", result_msg)
+        status_var.set(f"Imported {imported_machines} machines from {os.path.basename(file_path)}")
+        
+    except Exception as e:
+        messagebox.showerror("Import Error", f"Failed to import configuration:\n{str(e)}")
+        status_var.set("Import failed")
+
+def backup_current_config():
+    """Create a backup of current configuration"""
+    try:
+        backup_dir = "backups"
+        if not os.path.exists(backup_dir):
+            os.makedirs(backup_dir)
+        
+        backup_filename = f"vnc_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        backup_path = os.path.join(backup_dir, backup_filename)
+        
+        # Use export function to create backup
+        export_data = {
+            "metadata": {
+                "export_date": datetime.now().isoformat(),
+                "app_version": "1.0",
+                "description": "Automatic Backup"
+            },
+            "config": load_config(),
+            "machines": machines.copy(),
+            "passwords": {}
+        }
+        
+        # Backup passwords
+        for name in machines.keys():
+            try:
+                password = keyring.get_password(KEYRING_SERVICE, name)
+                if password:
+                    encoded_password = base64.b64encode(password.encode()).decode()
+                    export_data["passwords"][name] = encoded_password
+            except Exception:
+                pass
+        
+        with open(backup_path, "w") as f:
+            json.dump(export_data, f, indent=4)
+        
+        return backup_path
+        
+    except Exception as e:
+        messagebox.showerror("Backup Error", f"Failed to create backup:\n{str(e)}")
+        return None
 
 # === Check and configure VNC path ===
 def check_vnc_path():
@@ -262,7 +468,7 @@ def launch_selected_machine():
 # === GUI Setup ===
 root = ttk.Window(themename="flatly")
 root.title("UltraVNC Dashboard")
-root.geometry("500x600")
+root.geometry("500x650")  # Made slightly taller for new buttons
 
 default_font = tkfont.nametofont("TkDefaultFont")
 default_font.configure(family="Segoe UI", size=12)
@@ -294,7 +500,6 @@ ttk.Entry(frame_search, textvariable=search_var, bootstyle="info").pack(fill="x"
 ttk.Label(frame_search, text="Search machines by name or IP").pack()
 # === Added: Clear button for search bar ===
 ttk.Button(frame_search, text="Clear", command=lambda: search_var.set(""), bootstyle="secondary").pack(side="right", padx=5)
-
 
 # === Scrollable Machine List ===
 frame_buttons_container = ttk.Frame(root)
@@ -348,16 +553,6 @@ frame_buttons = scrollable_frame
 frame_actions = ttk.Frame(root)
 frame_actions.pack(pady=10, fill="x", padx=10)
 
-frame_actions.grid_columnconfigure(0, weight=1)
-frame_actions.grid_columnconfigure(1, weight=1)
-frame_actions.grid_columnconfigure(2, weight=1)
-frame_actions.grid_columnconfigure(3, weight=1)
-
-# === Status Bar ===
-status_var = ttk.StringVar()
-ttk.Label(root, textvariable=status_var, anchor="w", relief="sunken", bootstyle="secondary").pack(fill="x", side="bottom")
-status_var.set("Ready")
-
 # === Configure columns to expand equally ===
 frame_actions.grid_columnconfigure(0, weight=1)
 frame_actions.grid_columnconfigure(1, weight=1)
@@ -368,6 +563,24 @@ ttk.Button(frame_actions, text="Launch", command=launch_selected_machine, bootst
 ttk.Button(frame_actions, text=" Add  ", command=add_machine, bootstyle="primary").grid(row=0, column=1, sticky="ew", padx=2)
 ttk.Button(frame_actions, text=" Edit ", command=edit_machine, bootstyle="warning").grid(row=0, column=2, sticky="ew", padx=2)
 ttk.Button(frame_actions, text="Remove", command=remove_machine, bootstyle="danger").grid(row=0, column=3, sticky="ew", padx=2)
+
+# === Import/Export Actions ===
+frame_import_export = ttk.Frame(root)
+frame_import_export.pack(pady=5, fill="x", padx=10)
+
+# === Configure columns to expand equally ===
+frame_import_export.grid_columnconfigure(0, weight=1)
+frame_import_export.grid_columnconfigure(1, weight=1)
+frame_import_export.grid_columnconfigure(2, weight=1)
+
+ttk.Button(frame_import_export, text="Import Config", command=import_config, bootstyle="info").grid(row=0, column=0, sticky="ew", padx=2)
+ttk.Button(frame_import_export, text="Export Config", command=export_config, bootstyle="info").grid(row=0, column=1, sticky="ew", padx=2)
+ttk.Button(frame_import_export, text="Backup", command=lambda: backup_current_config() and status_var.set("Backup created"), bootstyle="secondary").grid(row=0, column=2, sticky="ew", padx=2)
+
+# === Status Bar ===
+status_var = ttk.StringVar()
+ttk.Label(root, textvariable=status_var, anchor="w", relief="sunken", bootstyle="secondary").pack(fill="x", side="bottom")
+status_var.set("Ready")
 
 refresh_machine_list()
 root.mainloop()
