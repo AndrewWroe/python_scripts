@@ -373,8 +373,8 @@ def edit_machine():
     if change_pw:
         password = simpledialog.askstring("Password", f"Enter new password for {new_name}:", show='*')
         if password:
-            password = password[:8]
-            keyring.set_password(KEYRING_SERVICE, new_name, password)
+            out = password[:8]
+            keyring.set_password(KEYRING_SERVICE, new_name, out)
 
     if new_name != name:
         try:
@@ -390,6 +390,38 @@ def edit_machine():
     save_machines()
     refresh_machine_list()
     status_var.set(f"Edited machine: {new_name}")
+
+# === Mouse wheel binding function ===
+def on_mouse_wheel(event):
+    # Scroll the canvas based on mouse wheel movement
+    canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+# === Bind mouse wheel to widgets (fixed to prevent recursion) ===
+def bind_mouse_wheel_to_widget(widget):
+    """Bind mouse wheel to a single widget without recursion"""
+    try:
+        widget.bind("<MouseWheel>", on_mouse_wheel)
+    except tk.TclError:
+        pass  # Widget may have been destroyed
+
+# === Setup mouse wheel bindings for all current widgets ===
+def setup_mouse_wheel_bindings():
+    """Setup mouse wheel bindings for canvas and scrollable frame"""
+    # Bind to canvas
+    canvas.bind("<MouseWheel>", on_mouse_wheel)
+    
+    # Bind to scrollable frame
+    scrollable_frame.bind("<MouseWheel>", on_mouse_wheel)
+    
+    # Bind to all existing children in scrollable frame
+    for child in scrollable_frame.winfo_children():
+        bind_mouse_wheel_to_widget(child)
+        # Bind to children of children (like inner frames)
+        for grandchild in child.winfo_children():
+            bind_mouse_wheel_to_widget(grandchild)
+            # Bind to great-grandchildren (like labels)
+            for greatgrandchild in grandchild.winfo_children():
+                bind_mouse_wheel_to_widget(greatgrandchild)
 
 # === Refresh machine list ===
 def refresh_machine_list(search_query=""):
@@ -433,18 +465,39 @@ def refresh_machine_list(search_query=""):
         
         security_icon = "🔒" if secure else "🔓"
         
-        # === Create radio button with consistent width ===
-        radio_btn = ttk.Radiobutton(
-            frame_buttons,
-            text=f"{security_icon} {name} ({ip})",
-            variable=machine_var,
-            value=name,
-            bootstyle="info",
-            width=max_width
-        )
-        radio_btn.pack(pady=5, anchor="center")
+        # === Create card-style frame without border ===
+        card_frame = ttk.Frame(frame_buttons, bootstyle="secondary")
+        card_frame.pack(pady=2, padx=10, fill="x")
         
-        # === Add double-click functionality to launch VNC ===
+        # === Add padding inside the card ===
+        inner_frame = ttk.Frame(card_frame)
+        inner_frame.pack(fill="x", padx=12, pady=8)
+        
+        # === Create container for centered text ===
+        text_container = ttk.Frame(inner_frame)
+        text_container.pack(expand=True)
+        
+        # === Machine name label ===
+        name_label = ttk.Label(
+            text_container,
+            text=f"{security_icon} {name}",
+            font=("Segoe UI", 11, "bold")
+        )
+        name_label.pack(side="left")
+        
+        # === IP address label ===
+        ip_label = ttk.Label(
+            text_container,
+            text=f"({ip})",
+            font=("Segoe UI", 9),
+            foreground="gray"
+        )
+        ip_label.pack(side="left", padx=(8, 0))
+        
+        # === Center the text container ===
+        text_container.pack_configure(anchor="center")
+        
+        # === Add double-click functionality ===
         def make_launch_handler(machine_name):
             def launch_machine(event=None):
                 machine_info = machines.get(machine_name, {})
@@ -459,11 +512,53 @@ def refresh_machine_list(search_query=""):
                 launch_vnc(ip, password, secure)
             return launch_machine
         
-        radio_btn.bind("<Double-Button-1>", make_launch_handler(name))
+        def make_select_handler(machine_name):
+            def select_machine(event=None):
+                machine_var.set(machine_name)
+                # Update card appearance for selection
+                update_card_selection()
+            return select_machine
+        
+        # === Store card reference for selection updates ===
+        card_frame.machine_name = name
+        
+        # === Bind events to all card elements ===
+        launch_handler = make_launch_handler(name)
+        select_handler = make_select_handler(name)
+        
+        for widget in [card_frame, inner_frame, text_container, name_label, ip_label]:
+            widget.bind("<Double-Button-1>", launch_handler)
+            widget.bind("<Button-1>", select_handler)
+        
+        # === Add subtle hover effect ===
+        def on_enter(event):
+            if hasattr(card_frame, 'machine_name') and card_frame.machine_name != machine_var.get():
+                card_frame.configure(bootstyle="info")
+        
+        def on_leave(event):
+            if hasattr(card_frame, 'machine_name') and card_frame.machine_name != machine_var.get():
+                card_frame.configure(bootstyle="secondary")
+        
+        for widget in [card_frame, inner_frame, text_container, name_label, ip_label]:
+            widget.bind("<Enter>", on_enter)
+            widget.bind("<Leave>", on_leave)
     
     # === Update the canvas scroll region ===
     frame_buttons.update_idletasks()
     canvas.configure(scrollregion=canvas.bbox("all"))
+    
+    # === Setup mouse wheel bindings for new widgets ===
+    setup_mouse_wheel_bindings()
+
+def update_card_selection():
+    """Update card appearance to show selection"""
+    selected_machine = machine_var.get()
+    for widget in frame_buttons.winfo_children():
+        if hasattr(widget, 'machine_name'):
+            if widget.machine_name == selected_machine:
+                widget.configure(bootstyle="primary")
+            else:
+                widget.configure(bootstyle="secondary")
 
 # === Launch selected ===
 def launch_selected_machine():
@@ -484,6 +579,11 @@ def launch_selected_machine():
     password = keyring.get_password(KEYRING_SERVICE, name)
     # Connect directly without confirmation
     launch_vnc(ip, password, secure)
+
+# === Search handler function ===
+def on_search_change(*args):
+    """Handle search input changes"""
+    refresh_machine_list(search_var.get())
 
 # === GUI Setup ===
 root = ttk.Window(themename="flatly")
@@ -514,8 +614,8 @@ ttk.Label(frame_top, text="VNC Dashboard", font=("Segoe UI", 16, "bold")).pack()
 frame_search = ttk.Frame(root)
 frame_search.pack(pady=5, fill="x", padx=10)
 search_var = ttk.StringVar()
-# === Bind KeyRelease to update the machine list as the user types ===
-search_var.trace_add("write", lambda *args: refresh_machine_list(search_var.get()))
+# === Fixed: Use separate function to prevent recursion ===
+search_var.trace_add("write", on_search_change)
 ttk.Entry(frame_search, textvariable=search_var, bootstyle="info").pack(fill="x")
 ttk.Label(frame_search, text="Search machines by name or IP").pack()
 # === Added: Clear button for search bar ===
@@ -542,24 +642,6 @@ def configure_canvas_width(event):
     canvas.itemconfig(canvas.find_all()[0], width=event.width)
 
 canvas.bind('<Configure>', configure_canvas_width)
-
-# === Add Mouse Wheel Scrolling for Windows ===
-def on_mouse_wheel(event):
-    # Scroll the canvas based on mouse wheel movement
-    # delta is positive for scroll up, negative for scroll down
-    canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-# === Bind mouse wheel to the canvas (Windows uses <MouseWheel>) ===
-canvas.bind("<MouseWheel>", on_mouse_wheel)
-
-# Bind mouse wheel to the scrollable frame and its children
-def bind_mouse_wheel(widget):
-    widget.bind("<MouseWheel>", on_mouse_wheel)
-    for child in widget.winfo_children():
-        bind_mouse_wheel(child)
-
-# === Apply bindings to the scrollable frame and its children ===
-bind_mouse_wheel(scrollable_frame)
 
 # === Ensure the canvas can receive focus to capture mouse wheel events ===
 canvas.bind("<Button-1>", lambda event: canvas.focus_set())
